@@ -30,24 +30,18 @@ func TestApplierApplyValidates(t *testing.T) {
 }
 
 func TestApplierDelegatesToExecutor(t *testing.T) {
-    exec := &mockExecutor{}
-    applier := NewApplier(exec)
-    cfg := Configuration{Interface: "eth0", Addresses: []string{"10.0.0.2/24"}}
-    if err := applier.Apply(cfg); err != nil {
-        t.Fatalf("Apply() error = %v", err)
-    }
-    if exec.cfg.Interface != cfg.Interface {
-        t.Fatalf("expected interface %s, got %s", cfg.Interface, exec.cfg.Interface)
-    }
-    if len(exec.cfg.Addresses) != len(cfg.Addresses) || exec.cfg.Addresses[0] != cfg.Addresses[0] {
-        t.Fatalf("expected addresses %v, got %v", cfg.Addresses, exec.cfg.Addresses)
-    }
-}
-
-type readFunc func(string) ([]byte, error)
-
-func (r readFunc) Read(path string) ([]byte, error) {
-	return r(path)
+	exec := &mockExecutor{}
+	applier := NewApplier(exec)
+	cfg := Configuration{Interface: "eth0", Addresses: []string{"10.0.0.2/24"}}
+	if err := applier.Apply(cfg); err != nil {
+		t.Fatalf("Apply() error = %v", err)
+	}
+	if exec.cfg.Interface != cfg.Interface {
+		t.Fatalf("expected interface %s, got %s", cfg.Interface, exec.cfg.Interface)
+	}
+	if len(exec.cfg.Addresses) != len(cfg.Addresses) || exec.cfg.Addresses[0] != cfg.Addresses[0] {
+		t.Fatalf("expected addresses %v, got %v", cfg.Addresses, exec.cfg.Addresses)
+	}
 }
 
 func TestLoaderLoad(t *testing.T) {

@@ -54,13 +54,25 @@ debug:
 vet:
 	@go vet $(GO_TAG_FLAGS) ./...
 
+.PHONY: tools
+TOOLS_BIN := $(BINDIR)/tools
+TOOLS := \
+golang.org/x/vuln/cmd/govulncheck@v1.1.4 \
+honnef.co/go/tools/cmd/staticcheck@v0.6.1
+
+tools:
+	@mkdir -p $(TOOLS_BIN)
+	@for tool in $(TOOLS); do \
+		GOBIN=$(abspath $(TOOLS_BIN)) go install $$tool; \
+	done
+
 .PHONY: staticcheck
-staticcheck:
-	@go tool staticcheck ./...
+staticcheck: tools
+	@$(TOOLS_BIN)/staticcheck ./...
 
 .PHONY: govulncheck
-govulncheck:
-	@go tool govulncheck -tags "$(GO_TAGS)" ./...
+govulncheck: tools
+	@$(TOOLS_BIN)/govulncheck -tags "$(GO_TAGS)" ./...
 
 .PHONY: lint
 lint: vet staticcheck

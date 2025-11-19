@@ -5,7 +5,7 @@ go 1.22
 require (
 	github.com/spf13/cobra v1.8.1
 	golang.org/x/vuln v1.1.4
-	honnef.co/go/tools v0.5.1
+	honnef.co/go/tools v0.6.1
 )
 
 require (

@@ -13,8 +13,9 @@ shelling out to multiple platform-specific tools.
 * **Address inspection** – show every IPv4/IPv6 address assigned to a specific
   interface so you can verify live state or diagnose configuration drift.
 * **Configuration application** – load a JSON document that declares the target
-  interface plus a list of addresses and pass it through a validated executor
-  (the default console executor prints the steps that would be performed).
+  interface plus a list of addresses and apply it via a validated executor that
+  adds/removes the prefixes on the live interface (a `--dry-run` flag keeps the
+  previous console-only behavior).
 
 These commands share a consistent Cobra-based interface and emit human-readable
 output that can also be parsed by higher-level orchestration tools.
@@ -79,12 +80,15 @@ cat <<'JSON' > cfg.json
 JSON
 
 goeth apply-config --file cfg.json
+# or review the operations without touching the network
+goeth apply-config --file cfg.json --dry-run
 ```
 
 The sample configuration uses the `interface` field to choose the target
-interface and `addresses` to list each prefix that should be attached. The
-built-in console executor prints the intended operations so you can review them
-before wiring a custom executor that performs real configuration changes.
+interface and `addresses` to list each prefix that should be attached. By
+default `goeth apply-config` now configures the OS directly (via Netlink) to
+match those addresses; pass `--dry-run` to fall back to the console executor if
+you only want to review the proposed changes.
 
 ## Dependency notes
 

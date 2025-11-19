@@ -21,23 +21,23 @@ func main() {
 	lister := interfaces.NewLister(interfaces.NetProvider{})
 	viewer := addresses.NewViewer(addresses.NetProvider{})
 	loader := config.NewLoader()
-	applier := config.NewApplier(config.ConsoleExecutor{Writer: os.Stdout})
+	executor := config.NewNetlinkExecutor(config.NetlinkAPI{})
 
-	root := newRootCommand(lister, viewer, loader, applier)
+	root := newRootCommand(lister, viewer, loader, executor)
 	if err := root.Execute(); err != nil {
 		fmt.Fprintln(os.Stderr, err)
 		os.Exit(1)
 	}
 }
 
-func newRootCommand(lister interfaces.Lister, viewer addresses.Viewer, loader config.Loader, applier config.Applier) *cobra.Command {
+func newRootCommand(lister interfaces.Lister, viewer addresses.Viewer, loader config.Loader, executor config.Executor) *cobra.Command {
 	cmd := &cobra.Command{
 		Use:   "goeth",
 		Short: "Manage network interfaces and configuration",
 	}
 	cmd.AddCommand(newInterfacesCmd(lister))
 	cmd.AddCommand(newAddressesCmd(viewer))
-	cmd.AddCommand(newApplyCmd(loader, applier))
+	cmd.AddCommand(newApplyCmd(loader, executor))
 	cmd.AddCommand(newMonitorCmd(lister, viewer))
 	return cmd
 }
@@ -88,8 +88,9 @@ func newAddressesCmd(viewer addresses.Viewer) *cobra.Command {
 	return cmd
 }
 
-func newApplyCmd(loader config.Loader, applier config.Applier) *cobra.Command {
+func newApplyCmd(loader config.Loader, executor config.Executor) *cobra.Command {
 	var path string
+	var dryRun bool
 	cmd := &cobra.Command{
 		Use:   "apply-config",
 		Short: "Apply configuration from a JSON file",
@@ -98,6 +99,11 @@ func newApplyCmd(loader config.Loader, applier config.Applier) *cobra.Command {
 			if err != nil {
 				return err
 			}
+			selected := executor
+			if dryRun {
+				selected = config.ConsoleExecutor{Writer: cmd.OutOrStdout()}
+			}
+			applier := config.NewApplier(selected)
 			if err := applier.Apply(cfg); err != nil {
 				return err
 			}
@@ -106,6 +112,7 @@ func newApplyCmd(loader config.Loader, applier config.Applier) *cobra.Command {
 		},
 	}
 	cmd.Flags().StringVarP(&path, "file", "f", "", "Path to JSON configuration file")
+	cmd.Flags().BoolVar(&dryRun, "dry-run", false, "Print intended operations without touching the network")
 	cmd.MarkFlagRequired("file")
 	return cmd
 }

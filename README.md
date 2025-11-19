@@ -58,6 +58,13 @@ Inspect all addresses assigned to `eth0`:
 goeth addresses --interface eth0
 ```
 
+Continuously watch interfaces (optionally filtered) and emit a log whenever
+their properties or addresses change:
+
+```bash
+goeth monitor --interval 10s --interface eth0
+```
+
 Apply a configuration defined in JSON (validated before execution):
 
 ```bash

@@ -1,14 +1,20 @@
 package main
 
 import (
+	"context"
+	"errors"
 	"fmt"
 	"os"
+	"os/signal"
+	"syscall"
+	"time"
 
 	"github.com/spf13/cobra"
 
 	"github.com/user/goeth/internal/addresses"
 	"github.com/user/goeth/internal/config"
 	"github.com/user/goeth/internal/interfaces"
+	"github.com/user/goeth/internal/monitor"
 )
 
 func main() {
@@ -32,6 +38,7 @@ func newRootCommand(lister interfaces.Lister, viewer addresses.Viewer, loader co
 	cmd.AddCommand(newInterfacesCmd(lister))
 	cmd.AddCommand(newAddressesCmd(viewer))
 	cmd.AddCommand(newApplyCmd(loader, applier))
+	cmd.AddCommand(newMonitorCmd(lister, viewer))
 	return cmd
 }
 
@@ -100,5 +107,35 @@ func newApplyCmd(loader config.Loader, applier config.Applier) *cobra.Command {
 	}
 	cmd.Flags().StringVarP(&path, "file", "f", "", "Path to JSON configuration file")
 	cmd.MarkFlagRequired("file")
+	return cmd
+}
+
+func newMonitorCmd(lister interfaces.Lister, viewer addresses.Viewer) *cobra.Command {
+	var interval time.Duration
+	var iface string
+	cmd := &cobra.Command{
+		Use:   "monitor",
+		Short: "Watch interfaces and addresses for changes",
+		RunE: func(cmd *cobra.Command, args []string) error {
+			ctx, stop := signal.NotifyContext(cmd.Context(), os.Interrupt, syscall.SIGTERM)
+			defer stop()
+			watcher := monitor.Watcher{
+				Lister:    lister,
+				Viewer:    viewer,
+				Interval:  interval,
+				Interface: iface,
+				Writer:    cmd.OutOrStdout(),
+			}
+			if err := watcher.Run(ctx); err != nil {
+				if errors.Is(err, context.Canceled) {
+					return nil
+				}
+				return err
+			}
+			return nil
+		},
+	}
+	cmd.Flags().DurationVarP(&interval, "interval", "t", 5*time.Second, "Polling interval")
+	cmd.Flags().StringVarP(&iface, "interface", "i", "", "Interface to monitor (all by default)")
 	return cmd
 }

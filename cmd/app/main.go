@@ -6,9 +6,9 @@ import (
 
 	"github.com/spf13/cobra"
 
-	"app/internal/addresses"
-	"app/internal/config"
-	"app/internal/interfaces"
+	"github.com/user/goeth/internal/addresses"
+	"github.com/user/goeth/internal/config"
+	"github.com/user/goeth/internal/interfaces"
 )
 
 func main() {
